@@ -1,10 +1,10 @@
 -- +migrate no-transaction
 
--- Create a continuous aggregate for hourly averages
-CREATE MATERIALIZED VIEW spot_prices_hourly
+-- Create a continuous aggregate for monthly averages
+CREATE MATERIALIZED VIEW spot_prices_monthly
     WITH (timescaledb.continuous) AS
 SELECT
-    time_bucket('1 hour', timestamp) AS bucket,
+    time_bucket('1 month', timestamp) AS bucket,
     zone_id,
     currency_id,
     AVG(price) as avg_price,
@@ -29,10 +29,10 @@ FROM spot_prices
 GROUP BY bucket, zone_id, currency_id;
 
 -- Add refresh policies for continuous aggregates
-SELECT add_continuous_aggregate_policy('spot_prices_hourly',
-    start_offset => INTERVAL '1 month',
-    end_offset => INTERVAL '1 hour',
-    schedule_interval => INTERVAL '1 hour',
+SELECT add_continuous_aggregate_policy('spot_prices_monthly',
+    start_offset => INTERVAL '5 years',
+    end_offset => INTERVAL '1 month',
+    schedule_interval => INTERVAL '1 month',
     if_not_exists => TRUE
 );
 
