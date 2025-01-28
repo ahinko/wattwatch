@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Build artifacts
+bin/
+dist/
+tmp/
+
+# Test files
+**/*_test.go
+**/*.test
+coverage.out
+test-results/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Development and documentation
+*.md
+docs/
+examples/
+scripts/
+.env*
+.editorconfig
+
+# Debugging
+*.log
+*.prof
+*.trace
+
+# Dependencies
+vendor/
+
+# OS specific
+.DS_Store
+Thumbs.db 
