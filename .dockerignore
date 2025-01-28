@@ -27,7 +27,6 @@ Dockerfile
 
 # Development and documentation
 *.md
-docs/
 examples/
 scripts/
 .env*
