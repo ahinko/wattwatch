@@ -8,6 +8,7 @@ var (
 	ErrConflict             = errors.New("conflict")
 	ErrHasAssociatedRecords = errors.New("has associated records")
 	ErrInvalidTimezone      = errors.New("invalid timezone")
+	ErrDuplicateEntry       = errors.New("duplicate entry")
 
 	// User errors
 	ErrEmailExists     = errors.New("email already exists")

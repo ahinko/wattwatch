@@ -138,6 +138,11 @@ func TestAuditLogRepository_List(t *testing.T) {
 	tc := testutil.NewTestContext(t)
 	user := tc.CreateTestUser("test-user", "test@example.com", "password123", false)
 
+	// Create metadata JSON
+	metadata := map[string]interface{}{"test": "value"}
+	metadataJSON, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
 	// Create some audit logs with different characteristics
 	startTime := time.Now().UTC().Add(-1 * time.Hour)
 	logs := []*models.CreateAuditLogRequest{
@@ -147,6 +152,7 @@ func TestAuditLogRepository_List(t *testing.T) {
 			EntityType:  "user",
 			EntityID:    user.ID.String(),
 			Description: "Created user",
+			Metadata:    string(metadataJSON),
 			IPAddress:   "127.0.0.1",
 			UserAgent:   "test-agent-1",
 		},
@@ -156,6 +162,7 @@ func TestAuditLogRepository_List(t *testing.T) {
 			EntityType:  "user",
 			EntityID:    user.ID.String(),
 			Description: "Updated user settings",
+			Metadata:    string(metadataJSON),
 			IPAddress:   "127.0.0.2",
 			UserAgent:   "test-agent-2",
 		},
@@ -165,6 +172,7 @@ func TestAuditLogRepository_List(t *testing.T) {
 			EntityType:  "post",
 			EntityID:    uuid.New().String(),
 			Description: "Deleted post",
+			Metadata:    string(metadataJSON),
 			IPAddress:   "127.0.0.3",
 			UserAgent:   "test-agent-3",
 		},
@@ -265,6 +273,11 @@ func TestAuditLogRepository_GetByUserID(t *testing.T) {
 	tc := testutil.NewTestContext(t)
 	user := tc.CreateTestUser("test-user", "test@example.com", "password123", false)
 
+	// Create metadata JSON
+	metadata := map[string]interface{}{"test": "value"}
+	metadataJSON, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
 	// Create some audit logs
 	logs := []*models.CreateAuditLogRequest{
 		{
@@ -273,8 +286,9 @@ func TestAuditLogRepository_GetByUserID(t *testing.T) {
 			EntityType:  "user",
 			EntityID:    user.ID.String(),
 			Description: "Created user",
+			Metadata:    string(metadataJSON),
 			IPAddress:   "127.0.0.1",
-			UserAgent:   "test-agent-1",
+			UserAgent:   "test-agent",
 		},
 		{
 			UserID:      &user.ID,
@@ -282,8 +296,9 @@ func TestAuditLogRepository_GetByUserID(t *testing.T) {
 			EntityType:  "user",
 			EntityID:    user.ID.String(),
 			Description: "Updated user",
-			IPAddress:   "127.0.0.2",
-			UserAgent:   "test-agent-2",
+			Metadata:    string(metadataJSON),
+			IPAddress:   "127.0.0.1",
+			UserAgent:   "test-agent",
 		},
 	}
 
@@ -331,27 +346,33 @@ func TestAuditLogRepository_GetByUserID(t *testing.T) {
 func TestAuditLogRepository_GetByEntityTypeAndID(t *testing.T) {
 	tc := testutil.NewTestContext(t)
 	user := tc.CreateTestUser("test-user", "test@example.com", "password123", false)
-	entityID := uuid.New().String()
 
-	// Create some audit logs
+	// Create metadata JSON
+	metadata := map[string]interface{}{"test": "value"}
+	metadataJSON, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
+	entityID := uuid.New().String()
 	logs := []*models.CreateAuditLogRequest{
 		{
 			UserID:      &user.ID,
 			Action:      models.AuditActionCreate,
-			EntityType:  "post",
+			EntityType:  "test_entity",
 			EntityID:    entityID,
-			Description: "Created post",
+			Description: "Created entity",
+			Metadata:    string(metadataJSON),
 			IPAddress:   "127.0.0.1",
-			UserAgent:   "test-agent-1",
+			UserAgent:   "test-agent",
 		},
 		{
 			UserID:      &user.ID,
 			Action:      models.AuditActionUpdate,
-			EntityType:  "post",
+			EntityType:  "test_entity",
 			EntityID:    entityID,
-			Description: "Updated post",
-			IPAddress:   "127.0.0.2",
-			UserAgent:   "test-agent-2",
+			Description: "Updated entity",
+			Metadata:    string(metadataJSON),
+			IPAddress:   "127.0.0.1",
+			UserAgent:   "test-agent",
 		},
 	}
 
@@ -369,7 +390,7 @@ func TestAuditLogRepository_GetByEntityTypeAndID(t *testing.T) {
 	}{
 		{
 			name:       "Success",
-			entityType: "post",
+			entityType: "test_entity",
 			entityID:   entityID,
 			wantCount:  2,
 		},
@@ -381,7 +402,7 @@ func TestAuditLogRepository_GetByEntityTypeAndID(t *testing.T) {
 		},
 		{
 			name:       "Non-existent Entity ID",
-			entityType: "post",
+			entityType: "test_entity",
 			entityID:   uuid.New().String(),
 			wantCount:  0,
 		},
@@ -410,6 +431,11 @@ func TestAuditLogRepository_CleanupOld(t *testing.T) {
 	tc := testutil.NewTestContext(t)
 	user := tc.CreateTestUser("test-user", "test@example.com", "password123", false)
 
+	// Create metadata JSON
+	metadata := map[string]interface{}{"test": "value"}
+	metadataJSON, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
 	// Create some audit logs with different timestamps
 	now := time.Now()
 	oldLog := &models.CreateAuditLogRequest{
@@ -418,10 +444,11 @@ func TestAuditLogRepository_CleanupOld(t *testing.T) {
 		EntityType:  "user",
 		EntityID:    user.ID.String(),
 		Description: "Old log",
+		Metadata:    string(metadataJSON),
 		IPAddress:   "127.0.0.1",
 		UserAgent:   "test-agent",
 	}
-	err := tc.AuditRepo.Create(context.Background(), oldLog)
+	err = tc.AuditRepo.Create(context.Background(), oldLog)
 	require.NoError(t, err)
 
 	// Set the created_at to an old date
@@ -437,6 +464,7 @@ func TestAuditLogRepository_CleanupOld(t *testing.T) {
 		EntityType:  "user",
 		EntityID:    user.ID.String(),
 		Description: "Recent log",
+		Metadata:    string(metadataJSON),
 		IPAddress:   "127.0.0.1",
 		UserAgent:   "test-agent",
 	}

@@ -4,7 +4,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"testing"
 	"wattwatch/internal/config"
 	"wattwatch/internal/database"
@@ -19,6 +18,7 @@ func CleanupTestDB(db *sql.DB) error {
 		SELECT tablename 
 		FROM pg_tables 
 		WHERE schemaname = 'public'
+		ORDER BY tablename
 	`)
 	if err != nil {
 		return fmt.Errorf("failed to get table names: %w", err)
@@ -38,24 +38,20 @@ func CleanupTestDB(db *sql.DB) error {
 		return fmt.Errorf("error iterating over table names: %w", err)
 	}
 
-	if len(tables) > 0 {
-		// Start a transaction for dropping tables
-		tx, err := db.Begin()
-		if err != nil {
-			return fmt.Errorf("failed to begin transaction: %w", err)
-		}
+	// Drop materialized views first
+	_, err = db.Exec(`
+		DROP MATERIALIZED VIEW IF EXISTS spot_prices_monthly CASCADE;
+		DROP MATERIALIZED VIEW IF EXISTS spot_prices_daily CASCADE;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to drop materialized views: %w", err)
+	}
 
-		// Drop all tables
-		dropQuery := fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE",
-			strings.Join(tables, ", "))
-		_, err = tx.Exec(dropQuery)
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("failed to drop tables: %w", err)
-		}
-
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("failed to commit transaction: %w", err)
+	// Drop each table individually
+	for _, table := range tables {
+		dropQuery := fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", table)
+		if _, err := db.Exec(dropQuery); err != nil {
+			return fmt.Errorf("failed to drop table %s: %w", table, err)
 		}
 	}
 

@@ -21,34 +21,39 @@ func TestSpotPriceRepository_Create(t *testing.T) {
 	zone := tc.CreateTestZone("test-zone", "UTC")
 	currency := tc.CreateTestCurrency("USD")
 
+	timestamp := time.Now().UTC()
+
 	tests := []struct {
-		name    string
-		input   models.SpotPrice
-		wantErr bool
+		name      string
+		input     models.SpotPrice
+		wantErr   bool
+		checkFunc func(t *testing.T, sp *models.SpotPrice)
 	}{
 		{
 			name: "Success",
 			input: models.SpotPrice{
-				Timestamp:  time.Now().UTC(),
+				Timestamp:  timestamp,
 				ZoneID:     zone.ID,
 				CurrencyID: currency.ID,
 				Price:      100.50,
 			},
 		},
 		{
-			name: "Duplicate Entry",
+			name: "Update On Duplicate",
 			input: models.SpotPrice{
-				Timestamp:  time.Now().UTC(),
+				Timestamp:  timestamp,
 				ZoneID:     zone.ID,
 				CurrencyID: currency.ID,
-				Price:      100.50,
+				Price:      150.75, // Different price
 			},
-			wantErr: true,
+			checkFunc: func(t *testing.T, sp *models.SpotPrice) {
+				require.Equal(t, 150.75, sp.Price)
+			},
 		},
 		{
 			name: "Invalid Zone ID",
 			input: models.SpotPrice{
-				Timestamp:  time.Now().UTC(),
+				Timestamp:  timestamp,
 				ZoneID:     uuid.New(),
 				CurrencyID: currency.ID,
 				Price:      100.50,
@@ -58,7 +63,7 @@ func TestSpotPriceRepository_Create(t *testing.T) {
 		{
 			name: "Invalid Currency ID",
 			input: models.SpotPrice{
-				Timestamp:  time.Now().UTC(),
+				Timestamp:  timestamp,
 				ZoneID:     zone.ID,
 				CurrencyID: uuid.New(),
 				Price:      100.50,
@@ -77,6 +82,9 @@ func TestSpotPriceRepository_Create(t *testing.T) {
 				require.NotEqual(t, uuid.Nil, tt.input.ID)
 				require.False(t, tt.input.CreatedAt.IsZero())
 				require.False(t, tt.input.UpdatedAt.IsZero())
+				if tt.checkFunc != nil {
+					tt.checkFunc(t, &tt.input)
+				}
 			}
 		})
 	}

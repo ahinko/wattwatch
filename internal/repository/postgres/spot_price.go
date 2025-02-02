@@ -27,6 +27,9 @@ func (r *spotPriceRepository) Create(ctx context.Context, spotPrice *models.Spot
 	query := `
 		INSERT INTO spot_prices (id, timestamp, zone_id, currency_id, price, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $6)
+		ON CONFLICT (timestamp, zone_id, currency_id) DO UPDATE
+		SET price = EXCLUDED.price,
+			updated_at = EXCLUDED.updated_at
 		RETURNING id, created_at, updated_at`
 
 	now := time.Now()

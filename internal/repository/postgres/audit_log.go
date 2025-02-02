@@ -139,8 +139,8 @@ func (r *auditLogRepository) buildListQuery(filter repository.AuditLogFilter) (s
 	}
 
 	if filter.SearchTerm != nil {
-		conditions = append(conditions, fmt.Sprintf("(description ILIKE $%d OR metadata ILIKE $%d)", paramCount, paramCount))
 		searchPattern := "%" + *filter.SearchTerm + "%"
+		conditions = append(conditions, fmt.Sprintf("(description ILIKE $%d OR metadata::text ILIKE $%d)", paramCount, paramCount))
 		params = append(params, searchPattern)
 		paramCount++
 	}
